@@ -1,0 +1,50 @@
+[
+   {
+      "name":"datahora",
+      "type":"TIMESTAMP",
+      "mode":"required",
+      "description": "The date when the position was recorded."
+   },
+   {
+      "name":"ID",
+      "type":"INTEGER",
+      "mode":"nullable",
+      "description": "The vessel identification."
+   },
+   {
+      "name":"mID",
+      "type":"INTEGER",
+      "mode":"nullable",
+      "description": "The mmsi."
+   },
+   {
+      "name":"codMarinha",
+      "type":"STRING",
+      "mode":"nullable",
+      "description": "The code identification of the marina."
+   },
+   {
+      "name":"lat",
+      "type":"STRING",
+      "mode":"nullable",
+      "description": "The latitude where the vessel was at that moment."
+   },
+   {
+      "name":"lon",
+      "type":"STRING",
+      "mode":"nullable",
+      "description": "The longitude where the vessel was at that moment."
+   },
+   {
+      "name":"curso",
+      "type":"INTEGER",
+      "mode":"nullable",
+      "description": "The course of the vessel."
+   },
+   {
+      "name":"nome",
+      "type":"STRING",
+      "mode":"nullable",
+      "description": "The name of the vessel."
+   }
+]
