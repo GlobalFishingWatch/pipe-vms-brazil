@@ -17,7 +17,7 @@ package = __import__('pipe_vms_brazil')
 DEPENDENCIES = [
     "google-cloud-storage==1.22.0",
     "jinja2-cli",
-    "pipe-tools==3.1.2",
+    "pipe-tools==3.1.3",
     "requests==2.24.0"
 ]
 
