@@ -130,7 +130,7 @@ if __name__ == '__main__':
     for device in devices:
         merge += [dict(ID=message['ID'], curso=message['curso'],
                        datahora=datetime.strptime(message['datahora'],'%d-%m-%Y %H:%M:%S').strftime('%Y-%m-%d %H:%M:%S'),
-                       lat=message['lat'], lon=message['lon'], mID=message['mID'],
+                       lat=message['lat'], lon=message['lon'], mID=message['mID'], speed=message['speed'],
                        codMarinha=device['codMarinha'], nome=device['nome'])
                   for message in messages
                   if message['ID'] == device['ID']]

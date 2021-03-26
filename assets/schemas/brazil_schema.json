@@ -46,5 +46,11 @@
       "type":"STRING",
       "mode":"nullable",
       "description": "The name of the vessel."
+   },
+   {
+      "name":"speed",
+      "type":"INTEGER",
+      "mode":"nullable",
+      "description": "The speed of the vessel in km/h."
    }
 ]

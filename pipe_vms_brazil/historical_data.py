@@ -1,11 +1,15 @@
 """
 Loads historical data and upload it to BQ.
+Years Files should be in json and GZIP Format.
 
 This script will do:
 1- Locate (devices and messages).
 2- Per each device ID will list all the messages ID.
 3- Add the device info in the message info and save a NEWLINEJSON.
 4- Compress again in a separate folder.
+
+Ex.
+python -m pipe_vms_brazil.historical_data -d 2012 -i ./downloads/output -o gs://vms-gfw/brazil/historical/v20210321/2012/
 """
 
 from datetime import date, datetime, timedelta
@@ -25,31 +29,7 @@ FORMAT_DT = '%Y'
 # FOLDER
 LOCAL_MERGER_PATH = "prepare_data"
 
-def copy_blob(gcs_path, blob_name, original_file):
-    """
-    Copies a blob from one bucket to another with a new name.
-    :param gcs_path: The gcs path to the original file.
-    :type gcs_path: str
-    :param blob_name: The name of the file.
-    :type blob_name: str
-    :param original_file: The file to download.
-    :type original_file: str
-    """
-    storage_client = storage.Client()
-
-    prefix = ''
-    bucket_name = ''
-    if gcs_path.startswith("gs:"):
-        bucket_name = re.search('(?<=gs://)[^/]*', gcs_path).group(0)
-        prefix = re.search('(?<=gs://)[^/]*/(.*)', gcs_path).group(1)
-
-    print(f'bucket {bucket_name}, prefix: {prefix}')
-
-    source_bucket = storage_client.bucket(bucket_name)
-    print(f'{prefix}{blob_name}')
-    source_blob = source_bucket.blob(f'{prefix}{blob_name}')
-
-    source_blob.download_to_filename(original_file.name)
+PROJECT_ID = "world-fishing-827"
 
 
 def create_directory(name):
@@ -69,7 +49,7 @@ def gcs_transfer(pattern_file, gcs_path):
     :param gcs_path: The absolute path of GCS.
     :type gcs_path: str
     """
-    storage_client = storage.Client()
+    storage_client = storage.Client(PROJECT_ID)
     gcs_search = re.search('gs://([^/]*)/(.*)', gcs_path)
     bucket = storage_client.bucket(gcs_search.group(1))
     pattern_path = Path(pattern_file)
@@ -95,10 +75,13 @@ if __name__ == '__main__':
     parser.add_argument('-o','--output_directory', help='The GCS directory'
                         'where the data will be stored. Expected with slash at'
                         'the end.', required=True)
+    parser.add_argument('-x','--date_stop', help='The date to stop the'
+                        'iteration for years. Date inclusive.', default=None, required=False)
     args = parser.parse_args()
     query_date = datetime.strptime(args.query_date, FORMAT_DT)
     input_directory= args.input_directory
     LOCAL_MERGER_PATH= args.input_directory
+    DATE_TO_CUT= args.date_stop
     output_directory= args.output_directory
 
     devices_file_path = f'{LOCAL_MERGER_PATH}/Devices.txt'
@@ -106,20 +89,10 @@ if __name__ == '__main__':
 
     start_time = time.time()
 
-    # create_directory(LOCAL_MERGER_PATH)
-
-    # Copies the original GZIP files to local.
-    # print('Copies the original GZIP files to local.')
-    # with open(devices_file_path, 'wb') as devices_original_file:
-    #     copy_blob(input_directory, f'devices/{query_date.strftime(FORMAT_DT)}.json.gz', devices_original_file)
-    # with open(messages_file_path, 'wb') as messages_original_file:
-    #     copy_blob(input_directory, f'messages/{query_date.strftime(FORMAT_DT)}.json.gz', messages_original_file)
-
     # Decompresses the GZIP.
     print(f'Decompresses the original GZIP files <{devices_file_path},{messages_file_path}>')
     devices=[]
     messages=[]
-    # with gzip.open(devices_file_path,'rb') as devices_original:
     with open(devices_file_path,'r') as devices_original:
         content = json.loads(devices_original.read())
         for device in content['devices']:
@@ -135,7 +108,7 @@ if __name__ == '__main__':
     for device in devices:
         merge += [dict(ID=message['ID'], curso=message['curso'],
                        datahora=datetime.strptime(message['datahora'],'%d-%m-%Y %H:%M:%S').strftime('%Y-%m-%d %H:%M:%S'),
-                       lat=message['lat'], lon=message['lon'], mID=message['mID'],
+                       lat=message['lat'], lon=message['lon'], mID=message['mID'], speed=message['speed'],
                        codMarinha=device['codMarinha'], nome=device['nome'])
                   for message in messages
                   if message['ID'] == device['ID']]
@@ -159,11 +132,11 @@ if __name__ == '__main__':
             for message in daily_msg:
                 json.dump(message, merged)
                 merged.write("\n")
-        # if single_day_formated == '2021-01-03':
-        #     sys.exit(1)
+        if DATE_TO_CUT != None and single_day_formated == DATE_TO_CUT:
+            break
 
         # Saves to GCS
-        # gcs_transfer(merged_file_path, output_directory)
+        gcs_transfer(merged_file_path, output_directory)
 
     print(f'Total of merged results  {len(merge)} vs daily messages acum  {acum}')
     # rmtree(LOCAL_MERGER_PATH)
